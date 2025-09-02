@@ -21,7 +21,7 @@ services:
       retries: 5
 
   app:
-    build: .
+    image: ghcr.io/SeqCrafter/zyfun-danmu:1.0.0
     container_name: video_api
     depends_on:
       postgres:
