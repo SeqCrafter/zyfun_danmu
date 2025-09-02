@@ -5,8 +5,10 @@ import logging
 import sys
 from typing import Optional, Dict, Any
 from pathlib import Path
+import os
 
 # 配置常量
+DANMU_API_BASE_URL = os.getenv("DANMU_API_BASE_URL", "")
 ZYPLAYER_BASE_URL = "http://127.0.0.1:9978/api/v1"
 DEFAULT_TIMEOUT = 30
 MAX_RETRIES = 3
@@ -320,7 +322,7 @@ def zyplayer_to_json(
             logger.info("保存所有播放源的链接")
 
         # 发送到接口
-        res = httpx.post("http://107.174.181.140:8080/upload", json=save_data)
+        res = httpx.post(f"{DANMU_API_BASE_URL}/upload", json=save_data)
         print(res.json())
         return True
 

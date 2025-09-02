@@ -88,7 +88,7 @@ curl -X DELETE "http://localhost:8080/video?title=视频标题&source=源1"
 
 ```bash
 ## 播放源是可选项，因为有的视频并没有播放源
-python fetch_data.py -s "视频源名称" -f "影片名称" [-j "播放源"]
+DANMU_API_BASE_URL={你搭建的zyfun弹幕的api接口非API_BASE_URL} python push_data_to_DB.py -s "视频源名称" -f "影片名称" [-j "播放源"]
 ```
 
 ## License
