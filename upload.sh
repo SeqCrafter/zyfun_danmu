@@ -1,1 +1,1 @@
-DANMU_API_BASE_URL=http://107.174.181.140:8080 python3 push_data_to_DB.py -s 小苹果 -f 子夜归
+DANMU_API_BASE_URL=http://107.174.181.140:8080 python3 push_data_to_DB.py -s 可可影视 -f 水饺皇后 -j 蓝光加速

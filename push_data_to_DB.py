@@ -232,8 +232,9 @@ def get_video_links(source_id: str, film_id: str) -> Dict[str, Dict[int, str]]:
             if not source_url:
                 logger.warning(f"播放源'{source_name}'的链接为空")
                 continue
-
-            for episode_link in source_url.split("#"):
+            episode_links = source_url.split("#")
+            vod_type = "tv" if len(episode_links) > 1 else "movie"
+            for episode_link in episode_links:
                 if not episode_link or "$" not in episode_link:
                     logger.debug(f"跳过无效的剧集链接: {episode_link}")
                     continue
@@ -245,7 +246,10 @@ def get_video_links(source_id: str, film_id: str) -> Dict[str, Dict[int, str]]:
                     if episode_index != -1 and link.strip():
                         single_source_links[episode_index] = link.strip()
                     else:
-                        logger.debug(f"跳过无效剧集: {episode_str}")
+                        if vod_type == "movie":
+                            single_source_links[1] = link.strip()
+                        else:
+                            logger.debug(f"跳过无效剧集: {episode_str}")
 
                 except ValueError as e:
                     logger.warning(f"解析剧集链接失败: {episode_link}, 错误: {e}")
