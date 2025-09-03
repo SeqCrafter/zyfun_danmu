@@ -8,10 +8,17 @@ class Video(Model):
     """
 
     id = fields.IntField(primary_key=True)
-    title = fields.CharField(max_length=255, description="视频标题")
+    title = fields.CharField(max_length=255, description="视频标题", unique=True)
+
+    # 多对多关系：一个视频可以有多个来源，一个来源也可以对应多个视频
+    sources: fields.ManyToManyRelation["VideoSource"] = fields.ManyToManyField(
+        "models.VideoSource",
+        related_name="videos",
+        through="video_video_source",
+        description="视频的多个来源",
+    )
 
     # 反向关系
-    sources: fields.ReverseRelation["VideoSource"]
     play_links: fields.ReverseRelation["PlayLink"]
 
     class Meta:
@@ -23,38 +30,36 @@ class Video(Model):
 
 class VideoSource(Model):
     """
-    视频来源模型 - 记录视频来源，一个视频对应多个来源
+    视频来源模型 - 记录视频来源，支持多对多关系
     """
 
     id = fields.IntField(primary_key=True)
-    name = fields.CharField(max_length=100, description="来源名称")
+    name = fields.CharField(max_length=100, description="来源名称", unique=True)
 
-    # 外键关系：多个来源对应一个视频
-    video: fields.ForeignKeyRelation[Video] = fields.ForeignKeyField(
-        "models.Video", related_name="sources", description="关联的视频"
-    )
+    # 多对多关系的反向引用（由Video模型定义）
+    videos: fields.ManyToManyRelation[Video]
 
     # 反向关系
     play_links: fields.ReverseRelation["PlayLink"]
 
     class Meta:
         table = "video_sources"
-        unique_together = ("video", "name")  # 同一视频下来源名称不能重复
 
     def __str__(self):
-        return f"{self.video.title} - {self.name}"
+        return self.name
 
 
 class PlayLink(Model):
     """
     播放链接模型 - 记录播放链接，包含视频和来源的外键
+    注意：视频和来源必须已经建立多对多关系，否则PlayLink创建会失败
     """
 
     id = fields.IntField(primary_key=True)
     episode_index = fields.IntField(description="集数索引")
     url = fields.TextField(description="播放链接")
 
-    # 外键关系
+    # 外键关系 - 仍然需要明确指向具体的视频和来源
     video: fields.ForeignKeyRelation[Video] = fields.ForeignKeyField(
         "models.Video", related_name="play_links", description="关联的视频"
     )

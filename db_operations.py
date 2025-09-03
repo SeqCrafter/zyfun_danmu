@@ -5,11 +5,11 @@ from typing import Optional, List, Dict, Any
 async def delete_video_source(title: str, source: str) -> int:
     """
     删除指定视频和来源的所有播放链接
-    
+
     Args:
         title: 视频标题
         source: 视频来源名称
-    
+
     Returns:
         删除的记录数量
     """
@@ -19,35 +19,44 @@ async def delete_video_source(title: str, source: str) -> int:
         if not video:
             print(f"未找到视频: {title}")
             return 0
-        
+
         # 查找视频来源
-        video_source = await VideoSource.filter(video=video, name=source).first()
+        video_source = await VideoSource.filter(name=source).first()
         if not video_source:
-            print(f"未找到视频'{title}'的来源: {source}")
+            print(f"未找到来源: {source}")
             return 0
-        
+
+        # 检查视频和来源是否有关联关系
+        await video.fetch_related("sources")
+        if video_source not in video.sources:
+            print(f"视频'{title}'与来源'{source}'没有关联关系")
+            return 0
+
         # 删除所有相关的播放链接
-        deleted_count = await PlayLink.filter(
-            video=video, 
-            source=video_source
-        ).delete()
-        
+        deleted_count = await PlayLink.filter(video=video, source=video_source).delete()
+
         print(f"成功删除视频'{title}'来源'{source}'的{deleted_count}条播放链接")
-        
-        # 如果该来源下没有其他播放链接了，删除来源记录
+
+        # 如果该来源下没有其他播放链接了，从视频的来源中移除该来源
         remaining_links = await PlayLink.filter(source=video_source).count()
         if remaining_links == 0:
-            await video_source.delete()
-            print(f"删除空的视频来源记录: {source}")
-        
-        # 如果该视频下没有其他来源了，删除视频记录
-        remaining_sources = await VideoSource.filter(video=video).count()
-        if remaining_sources == 0:
+            await video.sources.remove(video_source)
+            print(f"从视频'{title}'中移除来源'{source}'的关联关系")
+
+            # 检查该来源是否还关联其他视频，如果没有则删除来源记录
+            await video_source.fetch_related("videos")
+            if len(video_source.videos) == 0:
+                await video_source.delete()
+                print(f"删除空的视频来源记录: {source}")
+
+        # 检查该视频是否还有其他来源，如果没有则删除视频记录
+        await video.fetch_related("sources")
+        if len(video.sources) == 0:
             await video.delete()
             print(f"删除空的视频记录: {title}")
-        
+
         return deleted_count
-        
+
     except Exception as e:
         print(f"删除数据出错: {e}")
         return 0
@@ -108,13 +117,19 @@ async def batch_insert_videos(
             print(f"使用已存在的视频: {title}")
 
         # 创建或获取视频来源记录
-        video_source, created = await VideoSource.get_or_create(
-            video=video, name=source
-        )
+        video_source, created = await VideoSource.get_or_create(name=source)
         if created:
             print(f"创建新视频来源: {source}")
         else:
             print(f"使用已存在的视频来源: {source}")
+
+        # 建立视频和来源的多对多关系（如果尚未存在）
+        await video.fetch_related("sources")
+        if video_source not in video.sources:
+            await video.sources.add(video_source)
+            print(f"建立视频'{title}'与来源'{source}'的关联关系")
+        else:
+            print(f"视频'{title}'与来源'{source}'已存在关联关系")
 
         # 批量创建播放链接
         play_links_to_create = []

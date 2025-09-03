@@ -84,7 +84,7 @@ curl -X DELETE "http://localhost:8080/video?title=视频标题&source=源1"
 需要手动将你想观看的视频地址发送到接口数据库中才可以获取弹幕
 本仓库也提供了一个获取视频地址并上传的脚本
 
-使用 `fetch_data.py` 脚本从 ZYPlayer 获取数据:
+使用 `push_data_to_DB.py` 脚本从 ZYPlayer 获取数据:
 
 ```bash
 ## 播放源是可选项，因为有的视频并没有播放源

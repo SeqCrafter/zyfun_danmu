@@ -31,7 +31,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/seqcrafter/zyfun-danmu:1.1.0
+          tags: ghcr.io/seqcrafter/zyfun-danmu:1.2.0
 
   cleanup-refresh:
     runs-on: ubuntu-latest
