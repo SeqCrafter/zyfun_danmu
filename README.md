@@ -45,6 +45,18 @@ docker-compose up -d
 
 ## API 接口
 
+新增一个`title`接口用来适配魔改版[Zyplayer](https://github.com/SeqCrafter/ZyPlayer),魔改 zyplayer 的弹幕请求接口，把原来的 URL 请求方式更换为对 title 和集数的请求。
+
+### GET /title
+
+```bash
+curl "http://127.0.0.1:8080/title?title=子夜归&season_number=1&episode_number=1&season=true"
+```
+
+当然也可以使用这个仓库的方案[SeqCrafter/fetch_danmu](https://github.com/SeqCrafter/fetch_danmu), 可以实时抓取弹幕，无需数据库，但是主要在设置中把超时时间调到 50000，因为实时抓取非常慢！
+
+---
+
 ### GET /url
 
 通过 URL 查询视频信息和获取弹幕
