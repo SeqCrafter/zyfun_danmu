@@ -2,6 +2,7 @@ from robyn import Robyn, ALLOW_CORS
 from robyn.logger import logger, Colors
 import json
 import os
+from urllib.parse import unquote_plus
 
 from contrib import register_tortoise
 from db_operations import query_by_url, batch_insert_videos, delete_video_source
@@ -171,6 +172,30 @@ async def delete_video_data(query_params):
     except Exception as e:
         logger.error(f"删除数据时出错: {e}", color=Colors.RED)
         return {"error": f"服务器内部错误: {str(e)}"}, {}, 500
+
+
+@app.get("title")
+async def get_video_title(query_params):
+    title = unquote_plus(query_params.get("title", ""), encoding="utf-8")
+    season_number = query_params.get("season_number", "")
+    season = query_params.get("season", "")
+    episode_number = query_params.get("episode_number", "")
+
+    if season == "False" or season == "false" or season == "0":
+        season = False
+    else:
+        season = True
+    if not title or not season_number or not episode_number or type(season) is not bool:
+        return (
+            {"error": "title, season_number, episode_number and season are required"},
+            {},
+            400,
+        )
+    if season:
+        all_danmu = await fetch_danmu_by_title(title, episode_number)
+    else:
+        all_danmu = await fetch_danmu_by_title(title, "1")
+    return all_danmu, {}, 200
 
 
 if __name__ == "__main__":
