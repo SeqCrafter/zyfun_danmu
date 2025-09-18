@@ -3,16 +3,6 @@ from typing import Optional, List, Dict, Any
 
 
 async def delete_video_source(title: str, source: str) -> int:
-    """
-    删除指定视频和来源的所有播放链接
-
-    Args:
-        title: 视频标题
-        source: 视频来源名称
-
-    Returns:
-        删除的记录数量
-    """
     try:
         # 查找视频
         video = await Video.filter(title=title).first()

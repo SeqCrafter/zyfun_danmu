@@ -3,10 +3,6 @@ from tortoise import fields
 
 
 class Video(Model):
-    """
-    视频模型 - 记录视频名称
-    """
-
     id = fields.IntField(primary_key=True)
     title = fields.CharField(max_length=255, description="视频标题", unique=True)
 
@@ -29,10 +25,6 @@ class Video(Model):
 
 
 class VideoSource(Model):
-    """
-    视频来源模型 - 记录视频来源，支持多对多关系
-    """
-
     id = fields.IntField(primary_key=True)
     name = fields.CharField(max_length=100, description="来源名称", unique=True)
 
@@ -50,11 +42,6 @@ class VideoSource(Model):
 
 
 class PlayLink(Model):
-    """
-    播放链接模型 - 记录播放链接，包含视频和来源的外键
-    注意：视频和来源必须已经建立多对多关系，否则PlayLink创建会失败
-    """
-
     id = fields.IntField(primary_key=True)
     episode_index = fields.IntField(description="集数索引")
     url = fields.TextField(description="播放链接")

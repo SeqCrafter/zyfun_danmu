@@ -2,10 +2,9 @@ from robyn import Robyn, ALLOW_CORS
 from robyn.logger import logger, Colors
 import json
 import os
-from urllib.parse import unquote_plus
 
 from contrib import register_tortoise
-from db_operations import query_by_url, batch_insert_videos, delete_video_source
+from crud import query_by_url, batch_insert_videos
 
 from function import fetch_danmu_by_title
 
@@ -13,15 +12,8 @@ app = Robyn(__file__)
 app.add_response_header("content-type", "application/json")
 ALLOW_CORS(app, origins=["*"])
 
-# 从环境变量读取PostgreSQL连接信息
-POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
-POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "video_database")
-
 # 构建PostgreSQL连接URL
-db_url = f"postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+db_url = os.getenv("DATABASE_URL")
 
 # 注册Tortoise ORM
 register_tortoise(
@@ -130,72 +122,6 @@ async def upload_video_data(body):
     except Exception as e:
         logger.error(f"上传数据时出错: {e}", color=Colors.RED)
         return {"error": f"服务器内部错误: {str(e)}"}, {}, 500
-
-
-@app.delete("/video")
-async def delete_video_data(query_params):
-    """删除指定视频来源的所有播放链接"""
-    try:
-        title = query_params.get("title", "")
-        source = query_params.get("source", "")
-
-        if not title or not source:
-            return {"error": "title和source参数都是必需的"}, {}, 400
-
-        deleted_count = await delete_video_source(title, source)
-
-        if deleted_count > 0:
-            return (
-                {
-                    "success": True,
-                    "message": f"成功删除视频'{title}'来源'{source}'的{deleted_count}条播放链接",
-                    "data": {
-                        "title": title,
-                        "source": source,
-                        "deleted_count": deleted_count,
-                    },
-                },
-                {},
-                200,
-            )
-        else:
-            return (
-                {
-                    "success": False,
-                    "message": f"未找到视频'{title}'来源'{source}'的播放链接",
-                    "data": {"title": title, "source": source, "deleted_count": 0},
-                },
-                {},
-                404,
-            )
-
-    except Exception as e:
-        logger.error(f"删除数据时出错: {e}", color=Colors.RED)
-        return {"error": f"服务器内部错误: {str(e)}"}, {}, 500
-
-
-@app.get("title")
-async def get_video_title(query_params):
-    title = unquote_plus(query_params.get("title", ""), encoding="utf-8")
-    season_number = query_params.get("season_number", "")
-    season = query_params.get("season", "")
-    episode_number = query_params.get("episode_number", "")
-
-    if season == "False" or season == "false" or season == "0":
-        season = False
-    else:
-        season = True
-    if not title or not season_number or not episode_number or type(season) is not bool:
-        return (
-            {"error": "title, season_number, episode_number and season are required"},
-            {},
-            400,
-        )
-    if season:
-        all_danmu = await fetch_danmu_by_title(title, episode_number)
-    else:
-        all_danmu = await fetch_danmu_by_title(title, "1")
-    return all_danmu, {}, 200
 
 
 if __name__ == "__main__":
