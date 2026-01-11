@@ -93,6 +93,7 @@ export function queryVideoByUrl(db, url) {
     const sql = `
       SELECT 
         v.douban_id,
+        v.type as video_type,
         e.title as episode_title,
         v.title as video_title,
         s.name as source_name
