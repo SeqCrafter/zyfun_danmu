@@ -18,6 +18,34 @@ const fastify = Fastify({
 const db = initDatabase();
 
 //function part
+function limitDanmusByCount(filteredDanmus, danmuLimit) {
+  // 如果 danmuLimit 为 0，直接返回原始数据
+  if (danmuLimit === 0) {
+    return filteredDanmus;
+  }
+
+  // 计算目标弹幕数量
+  const targetCount = danmuLimit * 1000;
+  const totalCount = filteredDanmus.length;
+
+  // 如果当前弹幕数不超过目标数量，直接返回
+  if (totalCount <= targetCount) {
+    return filteredDanmus;
+  }
+
+  // 计算采样间隔
+  const interval = totalCount / targetCount;
+
+  // 按间隔抽取弹幕
+  const result = [];
+  for (let i = 0; i < targetCount; i++) {
+    // 计算当前应该取的索引位置
+    const index = Math.floor(i * interval);
+    result.push(filteredDanmus[index]);
+  }
+
+  return result;
+}
 
 async function url2douban(url) {
   try {
@@ -27,6 +55,7 @@ async function url2douban(url) {
     if (!result) {
       return {
         douban_id: 0,
+        video_type: "",
         episode_title: "",
         video_title: "",
         source_name: "",
@@ -38,6 +67,7 @@ async function url2douban(url) {
     console.error(error);
     return {
       douban_id: 0,
+      video_type: "",
       episode_title: "",
       video_title: "",
       source_name: "",
@@ -45,13 +75,13 @@ async function url2douban(url) {
   }
 }
 
-async function douban2danmu(douban_id, episode_number) {
+async function douban2danmu(douban_id, episode_number, video_type) {
   const config = getConfig();
   const danmuApiUrl = config.danmuApiUrl;
 
   try {
     const response = await fetch(
-      `${danmuApiUrl}?douban_id=${douban_id}&episode_number=${episode_number}`
+      `${danmuApiUrl}?douban_id=${douban_id}&episode_number=${episode_number}&video_type=${video_type}`
     );
     if (!response.ok) {
       console.log(`HTTP error! status: ${response.status}`);
@@ -63,7 +93,13 @@ async function douban2danmu(douban_id, episode_number) {
       };
     }
     const data = await response.json();
-    return data;
+    const limitedDanmus = limitDanmusByCount(data.danmuku, 5); // 限制弹幕数量为5000
+    return {
+      code: data.code,
+      name: data.name,
+      danmu: data.danmu,
+      danmuku: limitedDanmus,
+    };
   } catch (error) {
     console.error(error);
     return {
@@ -75,7 +111,11 @@ async function douban2danmu(douban_id, episode_number) {
   }
 }
 
-function extractEpisodeNumberFromTitle(episodeTitle) {
+function extractEpisodeNumberFromTitle(episodeTitle, ismovie) {
+  // 如果是电影，则返回1, 因为电影只有1集
+  if (ismovie) {
+    return 1;
+  }
   // 匹配格式：第1集、第01集、第10集等
   const chineseMatch = episodeTitle.match(/第(\d+)集/);
   if (chineseMatch) {
@@ -98,6 +138,49 @@ function extractEpisodeNumberFromTitle(episodeTitle) {
 
 async function getDanmu(url) {
   const douban_info = await url2douban(url);
+  const typedata = douban_info.video_type;
+  let video_type;
+  switch (typedata) {
+    case "电影片":
+      video_type = "movie";
+      break;
+    case "连续剧":
+      video_type = "tv";
+      break;
+    case "动漫片":
+      video_type = "movie";
+      break;
+    case "动作片":
+      video_type = "movie";
+      break;
+    case "喜剧片":
+      video_type = "movie";
+      break;
+    case "爱情片":
+      video_type = "movie";
+      break;
+    case "科幻片":
+      video_type = "movie";
+      break;
+    case "恐怖片":
+      video_type = "movie";
+      break;
+    case "剧情片":
+      video_type = "movie";
+      break;
+    case "战争片":
+      video_type = "movie";
+      break;
+    case "国产剧":
+      video_type = "tv";
+      break;
+    case "国产动漫":
+      video_type = "tv";
+      break;
+    default:
+      video_type = "tv";
+  }
+  const ismovie = video_type === "movie";
   if (douban_info.douban_id === 0) {
     return {
       code: 1,
@@ -107,7 +190,8 @@ async function getDanmu(url) {
     };
   }
   const episode_number = extractEpisodeNumberFromTitle(
-    douban_info.episode_title
+    douban_info.episode_title,
+    ismovie
   );
   if (episode_number === null) {
     return {
@@ -117,9 +201,11 @@ async function getDanmu(url) {
       danmuku: [],
     };
   }
+
   const danmu_info = await douban2danmu(
     douban_info.douban_id.toString(),
-    episode_number.toString()
+    episode_number.toString(),
+    video_type
   );
   if (danmu_info.code === 1) {
     return {
@@ -167,6 +253,7 @@ fastify.get("/api/query", async function (request, reply) {
 
     return reply.send({
       douban_id: result.douban_id,
+      video_type: result.video_type,
       episode_title: result.episode_title,
       video_title: result.video_title,
       source_name: result.source_name,
@@ -300,5 +387,3 @@ const stop = async () => {
 };
 
 export { start, stop };
-
-start();
