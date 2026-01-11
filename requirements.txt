@@ -1,4 +1,0 @@
-robyn
-httpx
-tortoise-orm[asyncpg]
-asyncpg

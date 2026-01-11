@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>视频采集系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e0e0e0;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #62bb83;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(74, 222, 128, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            background: #56b378;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #666;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        .tab:hover {
+            color: #333;
+            background: #f9f9f9;
+        }
+
+        .tab.active {
+            color: #49b16f;
+            border-bottom-color: #6dca8f;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .settings-button {
+            background: #f0f0f0;
+            color: #666;
+            box-shadow: none;
+            margin-top: 10px;
+        }
+
+        .settings-button:hover:not(:disabled) {
+            background: #e0e0e0;
+            color: #333;
+            box-shadow: none;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .examples h3 {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .examples ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .examples li {
+            color: #666;
+            margin-bottom: 4px;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .examples li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #56a874;
+        }
+
+        .config-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .config-info strong {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎬 视频采集系统</h1>
+        <p class="subtitle">输入视频标题开始采集数据</p>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="crawl">视频采集</button>
+            <button class="tab" data-tab="settings">系统设置</button>
+        </div>
+
+        <!-- 视频采集标签页 -->
+        <div id="crawl-tab" class="tab-content active">
+            <form id="crawlForm">
+                <div class="form-group">
+                    <label for="title">视频标题</label>
+                    <input type="text" id="title" name="title" placeholder="例如：凡人修仙传" required />
+                </div>
+
+                <button type="submit" id="submitBtn">
+                    <span id="btnText">开始采集</span>
+                </button>
+
+                <div id="message" class="message"></div>
+            </form>
+
+            <div class="examples">
+                <h3>💡 使用说明</h3>
+                <ul>
+                    <li>输入完整的视频标题</li>
+                    <li>采集任务将在后台异步执行</li>
+                    <li>系统会自动从采集站获取视频数据</li>
+                    <li>采集完成后可通过查询接口获取数据</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 系统设置标签页 -->
+        <div id="settings-tab" class="tab-content">
+            <form id="settingsForm">
+                <div class="form-group">
+                    <label for="crawlApiUrl">采集站 API 地址</label>
+                    <input type="text" id="crawlApiUrl" name="crawlApiUrl" placeholder="https://caiji.dyttzyapi.com"
+                        required />
+                </div>
+
+                <div class="form-group">
+                    <label for="danmuApiUrl">弹幕 API 地址</label>
+                    <input type="text" id="danmuApiUrl" name="danmuApiUrl"
+                        placeholder="https://novel-ninnetta-xiaohanys-f9773a5c.koyeb.app/api/douban" required />
+                </div>
+
+                <button type="submit" id="settingsSubmitBtn">
+                    <span id="settingsBtnText">保存设置</span>
+                </button>
+
+                <button type="button" id="resetBtn" class="settings-button">
+                    恢复默认设置
+                </button>
+
+                <div id="settingsMessage" class="message"></div>
+            </form>
+
+            <div class="config-info">
+                <strong>当前配置：</strong><br />
+                采集站: <span id="currentCrawlApi">加载中...</span><br />
+                弹幕站: <span id="currentDanmuApi">加载中...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 标签切换
+        const tabs = document.querySelectorAll(".tab");
+        const tabContents = document.querySelectorAll(".tab-content");
+
+        tabs.forEach((tab) => {
+            tab.addEventListener("click", () => {
+                const tabName = tab.dataset.tab;
+
+                tabs.forEach((t) => t.classList.remove("active"));
+                tabContents.forEach((tc) => tc.classList.remove("active"));
+
+                tab.classList.add("active");
+                document.getElementById(`${tabName}-tab`).classList.add("active");
+
+                if (tabName === "settings") {
+                    loadSettings();
+                }
+            });
+        });
+
+        // 视频采集表单
+        const form = document.getElementById("crawlForm");
+        const titleInput = document.getElementById("title");
+        const submitBtn = document.getElementById("submitBtn");
+        const btnText = document.getElementById("btnText");
+        const messageDiv = document.getElementById("message");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const title = titleInput.value.trim();
+            if (!title) {
+                showMessage("请输入视频标题", "error");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            btnText.textContent = "采集中...";
+
+            try {
+                const response = await fetch(`/api/crawl/${encodeURIComponent(title)}`, {
+                    method: "POST",
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(`✅ ${data.message || "采集任务已启动"}`, "success");
+                    titleInput.value = "";
+                } else {
+                    showMessage(`❌ ${data.message || "采集失败，请重试"}`, "error");
+                }
+            } catch (error) {
+                showMessage(`❌ 网络错误: ${error.message}`, "error");
+            } finally {
+                submitBtn.disabled = false;
+                btnText.textContent = "开始采集";
+            }
+        });
+
+        // 设置表单
+        const settingsForm = document.getElementById("settingsForm");
+        const crawlApiInput = document.getElementById("crawlApiUrl");
+        const danmuApiInput = document.getElementById("danmuApiUrl");
+        const settingsSubmitBtn = document.getElementById("settingsSubmitBtn");
+        const settingsBtnText = document.getElementById("settingsBtnText");
+        const settingsMessageDiv = document.getElementById("settingsMessage");
+        const resetBtn = document.getElementById("resetBtn");
+
+        // 加载设置
+        async function loadSettings() {
+            try {
+                const response = await fetch("/api/config");
+                const data = await response.json();
+
+                crawlApiInput.value = data.crawlApiUrl || "";
+                danmuApiInput.value = data.danmuApiUrl || "";
+
+                document.getElementById("currentCrawlApi").textContent = data.crawlApiUrl || "未设置";
+                document.getElementById("currentDanmuApi").textContent = data.danmuApiUrl || "未设置";
+            } catch (error) {
+                console.error("加载设置失败:", error);
+            }
+        }
+
+        // 保存设置
+        settingsForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const crawlApiUrl = crawlApiInput.value.trim();
+            const danmuApiUrl = danmuApiInput.value.trim();
+
+            if (!crawlApiUrl || !danmuApiUrl) {
+                showSettingsMessage("请填写完整的API地址", "error");
+                return;
+            }
+
+            settingsSubmitBtn.disabled = true;
+            settingsBtnText.textContent = "保存中...";
+
+            try {
+                const response = await fetch("/api/config", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ crawlApiUrl, danmuApiUrl }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSettingsMessage("✅ 设置保存成功", "success");
+                    loadSettings();
+                } else {
+                    showSettingsMessage(`❌ ${data.message || "保存失败"}`, "error");
+                }
+            } catch (error) {
+                showSettingsMessage(`❌ 网络错误: ${error.message}`, "error");
+            } finally {
+                settingsSubmitBtn.disabled = false;
+                settingsBtnText.textContent = "保存设置";
+            }
+        });
+
+        // 恢复默认设置
+        resetBtn.addEventListener("click", async () => {
+            if (!confirm("确定要恢复默认设置吗？")) {
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/config/reset", {
+                    method: "POST",
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSettingsMessage("✅ 已恢复默认设置", "success");
+                    loadSettings();
+                } else {
+                    showSettingsMessage(`❌ ${data.message || "恢复失败"}`, "error");
+                }
+            } catch (error) {
+                showSettingsMessage(`❌ 网络错误: ${error.message}`, "error");
+            }
+        });
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type} show`;
+            setTimeout(() => messageDiv.classList.remove("show"), 5000);
+        }
+
+        function showSettingsMessage(text, type) {
+            settingsMessageDiv.textContent = text;
+            settingsMessageDiv.className = `message ${type} show`;
+            setTimeout(() => settingsMessageDiv.classList.remove("show"), 5000);
+        }
+    </script>
+</body>
+
+</html>
